@@ -32,15 +32,19 @@ error Raffle__NotEnoughEthToEnterRaffle();
  */
 contract Raffle {
     uint256 private immutable entranceFee;
+    uint256 private immutable interval; // @dev The duration lottery in seconds
+    uint256 private lastTimeStamp;
     address payable[] private players; // "payable" for paying ETH to the player
 
     event RaffleEntered(address indexed _player);
 
-    constructor(uint256 _entranceFee) {
+    constructor(uint256 _entranceFee, uint256 _interval) {
         entranceFee = _entranceFee;
+        interval = _interval;
+        lastTimeStamp = block.timestamp;
     }
 
-    function enterRaffle() public payable {
+    function enterRaffle() external payable {
         if (msg.value < entranceFee) {
             revert Raffle__NotEnoughEthToEnterRaffle();
         }
@@ -49,7 +53,13 @@ contract Raffle {
         emit RaffleEntered(msg.sender);
     }
 
-    function pickWinner() public {}
+    // 1. get random number
+    // 2. use random number to pick player
+    function pickWinner() external {
+        if (block.timestamp - lastTimeStamp < interval) {
+            revert();
+        }
+    }
 
     function getEntranceFee() external view returns (uint256) {
         return entranceFee;
