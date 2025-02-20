@@ -32,6 +32,9 @@ error Raffle__NotEnoughEthToEnterRaffle();
  */
 contract Raffle {
     uint256 private immutable entranceFee;
+    address payable[] private players; // "payable" for paying ETH to the player
+
+    event RaffleEntered(address indexed _player);
 
     constructor(uint256 _entranceFee) {
         entranceFee = _entranceFee;
@@ -41,6 +44,9 @@ contract Raffle {
         if (msg.value < entranceFee) {
             revert Raffle__NotEnoughEthToEnterRaffle();
         }
+
+        players.push(payable(msg.sender));
+        emit RaffleEntered(msg.sender);
     }
 
     function pickWinner() public {}
