@@ -28,6 +28,11 @@ import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/V
 error Raffle__NotEnoughEthToEnterRaffle();
 error Raffle__TransferFailed();
 error Raffle__RaffleNotOpen();
+error Raffle__UpkeepNotNeeded(
+    uint256 _balance,
+    uint256 _playersLength,
+    uint256 _raffleState
+);
 
 /**
  * @title A smart contract for Raffle
@@ -114,11 +119,15 @@ contract Raffle is VRFConsumerBaseV2Plus {
     function performUpkeep(bytes calldata /* performData */) external {
         (bool upkeepNeeded, ) = checkUpkeep("");
         if (!upkeepNeeded) {
-            revert();
+            revert Raffle__UpkeepNotNeeded(
+                address(this).balance,
+                s_players.length,
+                uint256(s_raffleState)
+            );
         }
 
         s_raffleState = RaffleState.CALCULATING;
-        uint256 requestId = s_vrfCoordinator.requestRandomWords(
+        s_vrfCoordinator.requestRandomWords(
             VRFV2PlusClient.RandomWordsRequest({
                 keyHash: i_keyHash,
                 subId: i_subscriptionId,
@@ -139,7 +148,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     // method overriding
     // CEI: Checks, Effects, Interactions Pattern (APPLY TO ALL FUNCTION)
     function fulfillRandomWords(
-        uint256 requestId,
+        uint256 /* requestId */,
         uint256[] calldata randomWords
     ) internal virtual override {
         // Checks
