@@ -141,10 +141,6 @@ contract Raffle is VRFConsumerBaseV2Plus {
         );
     }
 
-    function getEntranceFee() external view returns (uint256) {
-        return i_entranceFee;
-    }
-
     // method overriding
     // CEI: Checks, Effects, Interactions Pattern (APPLY TO ALL FUNCTION)
     function fulfillRandomWords(
@@ -167,5 +163,13 @@ contract Raffle is VRFConsumerBaseV2Plus {
         if (!success) {
             revert Raffle__TransferFailed();
         }
+    }
+
+    function getEntranceFee() external view returns (uint256) {
+        return i_entranceFee;
+    }
+
+    function getRaffleState() external view returns (RaffleState) {
+        return s_raffleState;
     }
 }
