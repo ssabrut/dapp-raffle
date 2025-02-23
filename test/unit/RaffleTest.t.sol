@@ -4,7 +4,7 @@ pragma solidity ^0.8.18;
 import {Test} from "forge-std/Test.sol";
 import {DeployRaffle} from "script/DeployRaffle.s.sol";
 import {HelperConfig} from "script/HelperConfig.s.sol";
-import {Raffle, Raffle__NotEnoughEthToEnterRaffle, Raffle__RaffleNotOpen} from "src/Raffle.sol";
+import {Raffle, Raffle__NotEnoughEthToEnterRaffle, Raffle__RaffleNotOpen, Raffle__UpkeepNotNeeded} from "src/Raffle.sol";
 
 contract RaffleTest is Test {
     Raffle public raffle;
@@ -105,5 +105,38 @@ contract RaffleTest is Test {
 
         (bool upkeepNeeded, ) = raffle.checkUpkeep("");
         assert(!upkeepNeeded);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            PERFORMUPKEEP
+    //////////////////////////////////////////////////////////////*/
+    function testPerformUpkeepCanOnlyRunIfCheckUpkeepIsTrue() public {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+
+        raffle.performUpkeep("");
+    }
+
+    function testPerformUpkeepRevertIfCheckUpkeepIsFalse() public {
+        uint256 currentBalance = 0;
+        uint256 numPlayers = 0;
+        Raffle.RaffleState state = raffle.getRaffleState();
+
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        currentBalance += entranceFee;
+        numPlayers = 1;
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Raffle__UpkeepNotNeeded.selector,
+                currentBalance,
+                numPlayers,
+                state
+            )
+        );
+        raffle.performUpkeep("");
     }
 }
