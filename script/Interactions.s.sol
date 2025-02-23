@@ -60,7 +60,7 @@ contract FundSubscription is Script, Constant {
             vm.startBroadcast();
             VRFCoordinatorV2_5Mock(_vrfCoordinator).fundSubscription(
                 _subscriptionId,
-                FUND_AMMOUNT
+                FUND_AMMOUNT * 100
             );
             vm.stopBroadcast();
         } else {
