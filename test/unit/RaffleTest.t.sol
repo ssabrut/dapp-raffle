@@ -3,12 +3,12 @@ pragma solidity ^0.8.18;
 
 import {Test} from "forge-std/Test.sol";
 import {DeployRaffle} from "script/DeployRaffle.s.sol";
-import {HelperConfig} from "script/HelperConfig.s.sol";
+import {HelperConfig, Constant} from "script/HelperConfig.s.sol";
 import {Raffle, Raffle__NotEnoughEthToEnterRaffle, Raffle__RaffleNotOpen, Raffle__UpkeepNotNeeded} from "src/Raffle.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 
-contract RaffleTest is Test {
+contract RaffleTest is Test, Constant {
     Raffle public raffle;
     HelperConfig public helperConfig;
 
@@ -30,6 +30,13 @@ contract RaffleTest is Test {
         raffle.enterRaffle{value: entranceFee}();
         vm.warp(block.timestamp + interval + 1);
         vm.roll(block.number + 1);
+        _;
+    }
+
+    modifier skipFork() {
+        if (block.chainid != LOCAL_CHAIN_ID) {
+            return;
+        }
         _;
     }
 
@@ -168,7 +175,7 @@ contract RaffleTest is Test {
     // Stateless Fuzz test
     function testFullfilRandomWordsCanOnlyBeCalledAfterPerformUpkeep(
         uint256 _randomRequestId
-    ) public raffleEntered {
+    ) public raffleEntered skipFork {
         // Arrange / Act / Assert
         vm.expectRevert(VRFCoordinatorV2_5Mock.InvalidRequest.selector);
         VRFCoordinatorV2_5Mock(vrfCoordinator).fulfillRandomWords(
@@ -180,6 +187,7 @@ contract RaffleTest is Test {
     function testFulfillRandomWordsPicksAWinnerResetsAndSendsMoney()
         public
         raffleEntered
+        skipFork
     {
         // Arrange
         uint256 additionalEntrance = 3; // 4 people total
